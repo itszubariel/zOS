@@ -1,0 +1,16 @@
+[package]
+name = "zos"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[lib]
+name = "zos"
+crate-type = ["staticlib"]
+
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"

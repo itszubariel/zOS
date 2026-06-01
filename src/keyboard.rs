@@ -6,20 +6,20 @@ static mut BUFFER_LEN: usize = 0;
 static mut SHIFT_PRESSED: bool = false;
 static mut CAPS_LOCK: bool = false;
 pub static mut CURRENT_ROW: usize = 2;
-const PROMPT: &[u8] = b"[root @zos]$ ";
+const PROMPT: &[u8] = b"[root@zos]$ ";
 
 pub fn render_line() {
     unsafe {
         let mut col = 0;
 
-        // Render prompt: [root @zos]$ 
+        // Render prompt: [root@zos]$
         vga::print_at(b"[", CURRENT_ROW, col, 0x07); col += 1;
         vga::print_at(b"root", CURRENT_ROW, col, 0x0a); col += 4;
-        vga::print_at(b" @", CURRENT_ROW, col, 0x07); col += 2;
+        vga::print_at(b"@", CURRENT_ROW, col, 0x07); col += 1;
         vga::print_at(b"zos", CURRENT_ROW, col, 0x09); col += 3;
         vga::print_at(b"]$ ", CURRENT_ROW, col, 0x07); col += 3;
 
-        let prompt_len = col; // 13
+        let prompt_len = col; // 12
 
         // Print input buffer
         vga::print_at(&INPUT_BUFFER[..BUFFER_LEN], CURRENT_ROW, prompt_len, 0x0f);
@@ -145,7 +145,7 @@ pub fn handle_scancode(scancode: u8) {
     };
 
     unsafe {
-        if BUFFER_LEN < (80 - 13 - 1) { // prompt len 13
+        if BUFFER_LEN < (80 - 12 - 1) { // prompt len 12
             INPUT_BUFFER[BUFFER_LEN] = character;
             BUFFER_LEN += 1;
         }

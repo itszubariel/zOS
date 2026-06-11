@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2-alpha] - 2026-06-11
+### Added
+- Implemented `zfetch` command to display system information.
+- Added ASCII art for `zOS` in `zfetch`.
+- Added CPU identification via `CPUID` instruction.
+- Enhanced memory usage reporting.
+
 ## [0.1.1-alpha] - 2026-06-11
 ### Added
 - Full-screen scrollable terminal (80x25 characters).

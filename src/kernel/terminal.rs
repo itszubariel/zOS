@@ -4,11 +4,18 @@ pub const MAX_BUFFER_ROWS: usize = 100;
 pub const WIDTH: usize = 78; // 80 - 2 for borders
 pub const HEIGHT: usize = 23; // 25 - 2 for borders
 
+#[derive(PartialEq)]
+pub enum Theme {
+    Red,
+    Blue,
+    Pride,
+}
+
 pub struct Terminal {
     pub buffer: [u16; MAX_BUFFER_ROWS * WIDTH],
     pub write_pos: usize,
     pub scroll_offset: usize,
-    pub border_color: u8,
+    pub theme: Theme,
 }
 
 impl Terminal {
@@ -17,7 +24,7 @@ impl Terminal {
             buffer: [0x0f20; MAX_BUFFER_ROWS * WIDTH], // Space with white on black
             write_pos: 0,
             scroll_offset: 0,
-            border_color: 0x0b, // Light Cyan default
+            theme: Theme::Blue, // Default
         }
     }
 
@@ -100,7 +107,11 @@ impl Terminal {
 
     pub fn render(&self) {
         // Redraw border
-        vga::draw_box(0, 0, 80, 25, " zOS Terminal ", self.border_color);
+        match self.theme {
+            Theme::Red => vga::draw_box(0, 0, 80, 25, " zOS Terminal ", 0x0c),
+            Theme::Blue => vga::draw_box(0, 0, 80, 25, " zOS Terminal ", 0x0b),
+            Theme::Pride => vga::draw_pride_box(0, 0, 80, 25, " zOS Terminal "),
+        }
 
         let offset_x = 1;
         let offset_y = 1;

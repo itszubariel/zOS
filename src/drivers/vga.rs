@@ -81,3 +81,46 @@ pub fn draw_box(x: usize, y: usize, width: usize, height: usize, title: &str, co
         }
     }
 }
+
+pub fn draw_pride_box(x: usize, y: usize, width: usize, height: usize, title: &str) {
+    // 7-color rainbow palette: Red, Orange, Yellow, Green, Cyan, Blue, Magenta
+    let colors = [0x04, 0x06, 0x0e, 0x02, 0x03, 0x01, 0x05];
+    let mut color_idx = 0;
+
+    let mut next_color = || {
+        let color = colors[color_idx];
+        color_idx = (color_idx + 1) % colors.len();
+        color
+    };
+
+    // Calculate border characters
+    // Top border
+    for i in 0..width {
+        let char = if i == 0 { 0xda } else if i == width - 1 { 0xbf } else { 0xc4 };
+        write_char_at(char, y, x + i, next_color());
+    }
+
+    // Right border
+    for i in 1..height - 1 {
+        write_char_at(0xb3, y + i, x + width - 1, next_color());
+    }
+
+    // Bottom border
+    for i in (0..width).rev() {
+        let char = if i == 0 { 0xc0 } else if i == width - 1 { 0xd9 } else { 0xc4 };
+        write_char_at(char, y + height - 1, x + i, next_color());
+    }
+
+    // Left border
+    for i in (1..height - 1).rev() {
+        write_char_at(0xb3, y + i, x, next_color());
+    }
+
+    // Title
+    let title_bytes = title.as_bytes();
+    for (i, &byte) in title_bytes.iter().enumerate() {
+        if i < width - 2 {
+            write_char_at(byte, y, x + 1 + i, 0x0f); // White title
+        }
+    }
+}

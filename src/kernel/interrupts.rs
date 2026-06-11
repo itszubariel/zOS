@@ -1,5 +1,5 @@
 use core::arch::asm;
-use crate::keyboard;
+use crate::drivers::keyboard;
 
 #[derive(Copy, Clone)]
 #[repr(C, packed)]
@@ -45,12 +45,23 @@ pub struct InterruptStackFrame {
 
 unsafe extern "C" {
     fn keyboard_interrupt_handler();
+    fn timer_interrupt_handler();
 }
 
 pub fn init_idt() {
     let handler_addr = keyboard_interrupt_handler as *const () as u64;
+    let timer_handler_addr = timer_interrupt_handler as *const () as u64;
 
     unsafe {
+        IDT[0x20] = IDTEntry {
+            offset_low: timer_handler_addr as u16,
+            selector: 0x08,
+            ist: 0,
+            type_attr: 0x8e,
+            offset_mid: (timer_handler_addr >> 16) as u16,
+            offset_high: (timer_handler_addr >> 32) as u32,
+            zero: 0,
+        };
         IDT[0x21] = IDTEntry {
             offset_low: handler_addr as u16,
             selector: 0x08, // Kernel code segment
@@ -84,8 +95,8 @@ pub fn init_pic() {
         // ICW4: 8086 mode
         outb(0x21, 0x01);
         outb(0xa1, 0x01);
-        // Unmask IRQ1 (keyboard)
-        outb(0x21, 0xfd);
+        // Unmask IRQ0 (timer) and IRQ1 (keyboard)
+        outb(0x21, 0xfc);
         outb(0xa1, 0xff);
     }
 }
@@ -96,6 +107,14 @@ pub extern "C" fn keyboard_handler_inner() {
         let scancode = inb(0x60);
         keyboard::handle_scancode(scancode);
         // EOI to master PIC
+        outb(0x20, 0x20);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn timer_handler_inner() {
+    crate::drivers::pit::tick();
+    unsafe {
         outb(0x20, 0x20);
     }
 }

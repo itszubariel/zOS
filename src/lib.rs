@@ -1,35 +1,49 @@
 #![no_std]
 #![no_main]
 
-mod vga;
-mod interrupts;
-mod keyboard;
-mod commands;
+extern crate alloc;
+
+pub mod drivers;
+pub mod kernel;
+pub mod ui;
 
 use core::panic::PanicInfo;
 use core::arch::asm;
+use crate::kernel::terminal::Terminal;
+
+pub static mut TERMINAL: Terminal = Terminal::new();
 
 #[unsafe(no_mangle)]
 pub extern "C" fn kernel_main() -> ! {
-    vga::clear_screen();
-    vga::disable_cursor();
+    drivers::vga::clear_screen();
 
-    // Banner
-    vga::print_at(b"Welcome to ", 0, 0, 0x0f);
-    vga::print_at(b"ZOS", 0, 11, 0x09);
-    vga::print_at(b" A hobbyist x86_64 kernel.", 0, 14, 0x0f);
-    vga::print_at(b"Version: 0.1.0-alpha", 1, 0, 0x07);
-    vga::print_at(b"Type 'help' for commands.", 2, 0, 0x07);
-
-    interrupts::init_pic();
-    interrupts::init_idt();
-
-    // Reset prompt row after banner
+    // Initialize heap
     unsafe {
-        crate::keyboard::CURRENT_ROW = 4;
+        kernel::memory::ALLOCATOR.init(
+            &raw const kernel::memory::HEAP_MEM as usize,
+            (&raw const kernel::memory::HEAP_MEM as usize) + kernel::memory::HEAP_SIZE
+        );
     }
 
-    keyboard::render_line();
+    drivers::vga::enable_cursor();
+    drivers::vga::update_cursor(1, 1);
+
+    // Draw full-screen border
+    drivers::vga::draw_box(0, 0, 80, 25, " zOS Terminal ", 0x0b);
+
+    // Initial banner
+    unsafe {
+        let term = (&raw mut TERMINAL).as_mut().unwrap();
+        term.write_str_with_color(b"Welcome to zOS v0.1.1-alpha\n", 0x0e); // Yellow for contrast
+        term.write_str(b"Type 'help' for commands.\n");
+        term.render();
+    }
+
+    kernel::interrupts::init_pic();
+    kernel::interrupts::init_idt();
+    drivers::pit::init_pit(100);
+
+    drivers::keyboard::render_line();
 
     unsafe {
         asm!("sti");

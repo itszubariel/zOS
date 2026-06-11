@@ -22,6 +22,16 @@ impl BumpAllocator {
         self.heap_end.store(heap_end, Ordering::SeqCst);
         self.next.store(heap_start, Ordering::SeqCst);
     }
+
+    pub fn used_memory(&self) -> usize {
+        let start = self.heap_start.load(Ordering::SeqCst);
+        let next = self.next.load(Ordering::SeqCst);
+        if start == 0 || next < start {
+            0
+        } else {
+            next - start
+        }
+    }
 }
 
 unsafe impl GlobalAlloc for BumpAllocator {

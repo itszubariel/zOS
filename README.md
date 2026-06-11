@@ -50,6 +50,10 @@ The `build.sh` script automates the compilation and ISO creation process:
 ```
 
 ## Features
-- VGA text mode support.
+- Full-screen scrollable terminal with 100-line history.
+- Color preservation for all terminal output.
+- Manual scrolling with Page Up/Down keys.
+- Dynamic theme switching (red/blue).
 - Keyboard input with Shift/Caps Lock/Backspace.
-- Command processing (help, clear, echo, version).
+- Command processing (help, clear, echo, version, uptime, sysinfo, theme).
+- Clean module-based architecture.

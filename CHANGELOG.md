@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.1-alpha] - 2026-06-11
+### Added
+- Full-screen scrollable terminal (80x25 characters).
+- Color preservation in terminal history buffer.
+- Dynamic theme switching (red/blue) with `theme` command.
+- Manual scrolling via Page Up and Page Down keys.
+- New source directory organization (`drivers/`, `kernel/`, `ui/`).
+
+### Fixed
+- Thinner terminal outline using single-line characters.
+- Newline handling in terminal write operations.
+- UI contrast improvements (yellow welcome text).
+- Broken module imports and project build warnings.
+
 ## [0.1.0-alpha] - 2026-06-02
 ### Added
 - Initial kernel structure.

@@ -1,6 +1,26 @@
-use crate::kernel::terminal::Terminal;
+use crate::kernel::terminal::{Terminal, Theme};
 use crate::kernel::interrupts;
 use crate::drivers::pit;
+use crate::kernel::memory;
+use crate::kernel::cpu;
+
+fn print_number(n: usize, terminal: &mut Terminal) {
+    let mut buf = [0u8; 20];
+    let mut i = 0;
+    let mut val = n;
+    if val == 0 {
+        buf[i] = b'0';
+        i += 1;
+    } else {
+        while val > 0 {
+            buf[i] = ((val % 10) as u8) + b'0';
+            val /= 10;
+            i += 1;
+        }
+    }
+    buf[0..i].reverse();
+    terminal.write_str(&buf[0..i]);
+}
 
 pub fn run(buffer: *const u8, len: usize, terminal: &mut Terminal) {
     if len == 0 {
@@ -12,7 +32,7 @@ pub fn run(buffer: *const u8, len: usize, terminal: &mut Terminal) {
     if cmd == b"help" {
         terminal.write_str_with_color(b"Available commands:\n", 0x0e); // Yellow
         terminal.write_str(
-            b"- help: Show this menu\n- clear: Clear screen\n- echo <msg>: Echo msg\n- version: Show version\n- uptime: Show uptime\n- theme <red/blue>: Change theme\n- reboot: Reboot system\n- sysinfo: Show system info\n"
+            b"- help: Show this menu\n- clear: Clear screen\n- echo <msg>: Echo msg\n- version: Show version\n- uptime: Show uptime\n- theme <red/blue/pride>: Change theme\n- reboot: Reboot system\n- sysinfo: Show system info\n- zfetch: Show system info with art\n"
         );
     } else if cmd == b"clear" {
         terminal.clear();
@@ -27,13 +47,16 @@ pub fn run(buffer: *const u8, len: usize, terminal: &mut Terminal) {
     } else if cmd.starts_with(b"theme ") {
         let theme = &cmd[6..];
         if theme == b"red" {
-            terminal.border_color = 0x0c; // Light Red
+            terminal.theme = Theme::Red;
             terminal.write_str_with_color(b"Theme changed to red.\n", 0x0c);
         } else if theme == b"blue" {
-            terminal.border_color = 0x0b; // Light Cyan (Original Blue)
+            terminal.theme = Theme::Blue;
             terminal.write_str_with_color(b"Theme changed to blue.\n", 0x0b);
+        } else if theme == b"pride" {
+            terminal.theme = Theme::Pride;
+            terminal.write_str_with_color(b"Theme changed to pride.\n", 0x0f);
         } else {
-            terminal.write_str(b"Unknown theme. Use 'red' or 'blue'.\n");
+            terminal.write_str(b"Unknown theme. Use 'red', 'blue' or 'pride'.\n");
         }
         terminal.render();
     } else if cmd == b"reboot" {
@@ -51,6 +74,51 @@ pub fn run(buffer: *const u8, len: usize, terminal: &mut Terminal) {
         terminal.write_str(b"\n");
     } else if cmd == b"version" {
         terminal.write_str_with_color(b"zOS v0.1.1 (alpha)\n", 0x0b); // Light Cyan
+    } else if cmd == b"zfetch" {
+        // ASCII Art lines
+        let art = [
+            b"  _____  ____   _____ ",
+            b" |__  / / __ \\ / ____|",
+            b"   / / | |  | | (___  ",
+            b"  / /_ | |__| |\\___ \\ ",
+            b" /____| \\____/ |____/ "
+        ];
+
+        let uptime = pit::get_uptime_ticks() / 100;
+        let memory_used = memory::ALLOCATOR.used_memory() / 1024;
+        let cpu_model = cpu::get_cpu_model();
+
+        for i in 0..6 {
+            // Print art line
+            if i < 5 {
+                terminal.write_str_with_color(art[i], 0x09);
+                terminal.write_str(b"   "); // Padding
+            } else {
+                terminal.write_str(b"                 "); // Padding for lines without art
+            }
+
+            // Print info lines based on row
+            match i {
+                0 => { terminal.write_str_with_color(b"OS: zOS (hobbyist)", 0x0b); }
+                1 => { terminal.write_str_with_color(b"Kernel: v0.1.1 (alpha)", 0x0b); }
+                2 => {
+                    terminal.write_str_with_color(b"Uptime: ", 0x0b);
+                    print_number(uptime as usize, terminal);
+                    terminal.write_str_with_color(b" s", 0x0b);
+                }
+                3 => {
+                    terminal.write_str_with_color(b"Memory: ", 0x0b);
+                    print_number(memory_used, terminal);
+                    terminal.write_str_with_color(b" KB / 1024 KB", 0x0b);
+                }
+                4 => {
+                    terminal.write_str_with_color(b"CPU: ", 0x0b);
+                    terminal.write_str_with_color(&cpu_model, 0x0b);
+                }
+                _ => {}
+            }
+            terminal.write_str(b"\n");
+        }
     } else if cmd == b"uptime" {
         let uptime = pit::get_uptime_ticks() / 100;
         let mut buf = [0u8; 20];
